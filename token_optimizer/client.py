@@ -110,7 +110,7 @@ class OptimizedClient:
 
         # 6. Track usage
         self._cache.record_usage(response.usage)
-        cost = self._cost.record(response.usage)
+        self._cost.record(response.usage)
         self._cost._model = chosen_model  # update for accurate pricing
 
         text = next((b.text for b in response.content if b.type == "text"), "")

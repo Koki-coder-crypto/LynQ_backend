@@ -25,12 +25,10 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import asyncio
 import os
 import sys
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from anthropic import AsyncAnthropic
 from textual.app import App, ComposeResult
@@ -300,8 +298,10 @@ class AgentPanel(Vertical):
         self.query_one("#bgt-label", Label).update(s.budget_bar_label)
 
     def mark_active(self, active: bool) -> None:
-        if active: self.add_class("active")
-        else:      self.remove_class("active")
+        if active:
+            self.add_class("active")
+        else:
+            self.remove_class("active")
 
 
 class GlobalStatsBar(Static):
@@ -408,7 +408,8 @@ class TeamAgentApp(App[None]):
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         msg = event.value.strip()
-        if not msg: return
+        if not msg:
+            return
         event.input.value = ""
         self._dispatch(self._active, msg)
 

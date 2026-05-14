@@ -22,8 +22,7 @@ import os
 import re
 import sys
 import time
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from anthropic import AsyncAnthropic
 from textual.app import App, ComposeResult
@@ -596,7 +595,7 @@ def main() -> None:
     workers = WORKER_PRESETS[args.preset]
     mode    = "Demo" if args.demo else "Production"
     print(f"\n{mode} mode / {args.preset} preset")
-    print(f"  Director: claude-sonnet-4-6")
+    print("  Director: claude-sonnet-4-6")
     for w in workers:
         p = PRICING[w.model]
         print(f"  {w.name:12s}: {w.model.replace('claude-','')}  ${p['input']:.2f}/1M input")

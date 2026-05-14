@@ -6,7 +6,6 @@ so data survives across Python process restarts.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
