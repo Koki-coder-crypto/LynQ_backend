@@ -10,7 +10,6 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
 
-
 _STATS_DIR = Path.home() / ".habitly"
 _STATS_FILE = _STATS_DIR / "stats.json"
 
@@ -60,11 +59,11 @@ class StatsStore:
     def record(self, usage: object, cost_usd: float = 0.0) -> None:
         s = self.today
         s.requests += 1
-        s.total_input_tokens  += getattr(usage, "input_tokens", 0) or 0
+        s.total_input_tokens += getattr(usage, "input_tokens", 0) or 0
         s.total_output_tokens += getattr(usage, "output_tokens", 0) or 0
-        s.cache_writes        += getattr(usage, "cache_creation_input_tokens", 0) or 0
-        s.cache_reads         += getattr(usage, "cache_read_input_tokens", 0) or 0
-        s.total_cost_usd      += cost_usd
+        s.cache_writes += getattr(usage, "cache_creation_input_tokens", 0) or 0
+        s.cache_reads += getattr(usage, "cache_read_input_tokens", 0) or 0
+        s.total_cost_usd += cost_usd
         self._save()
 
     def summary(self, days: int = 7) -> str:
@@ -96,6 +95,4 @@ class StatsStore:
             return {}
 
     def _save(self) -> None:
-        _STATS_FILE.write_text(
-            json.dumps({k: asdict(v) for k, v in self._data.items()}, indent=2)
-        )
+        _STATS_FILE.write_text(json.dumps({k: asdict(v) for k, v in self._data.items()}, indent=2))

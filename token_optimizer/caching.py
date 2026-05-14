@@ -15,16 +15,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-
 CacheTTL = Literal["5m", "1h"]
 
 
 @dataclass
 class CacheStats:
     requests: int = 0
-    cache_writes: int = 0      # tokens written to cache
-    cache_reads: int = 0       # tokens read from cache
-    uncached_tokens: int = 0   # full-price input tokens
+    cache_writes: int = 0  # tokens written to cache
+    cache_reads: int = 0  # tokens read from cache
+    uncached_tokens: int = 0  # full-price input tokens
 
     @property
     def hit_rate(self) -> float:
@@ -37,11 +36,7 @@ class CacheStats:
         # Cache write:   1.25x per token
         # Cache read:    0.1x per token
         baseline = self.cache_writes + self.cache_reads + self.uncached_tokens
-        actual = (
-            self.cache_writes * 1.25
-            + self.cache_reads * 0.1
-            + self.uncached_tokens * 1.0
-        )
+        actual = self.cache_writes * 1.25 + self.cache_reads * 0.1 + self.uncached_tokens * 1.0
         if baseline == 0:
             return "No data yet"
         saved_pct = max(0, (1 - actual / baseline) * 100)
@@ -115,9 +110,12 @@ class CacheManager:
             last = messages[-1]
             content = last.get("content")
             if isinstance(content, str):
-                messages[-1] = dict(last, content=[
-                    {"type": "text", "text": content, "cache_control": self._cache_control(ttl)}
-                ])
+                messages[-1] = dict(
+                    last,
+                    content=[
+                        {"type": "text", "text": content, "cache_control": self._cache_control(ttl)}
+                    ],
+                )
             elif isinstance(content, list) and content:
                 new_content = list(content)
                 new_content[-1] = dict(content[-1], cache_control=self._cache_control(ttl))
@@ -168,7 +166,7 @@ class CacheManager:
         """Pass the response.usage object to track cache efficiency."""
         self.stats.requests += 1
         self.stats.cache_writes += getattr(usage, "cache_creation_input_tokens", 0) or 0
-        self.stats.cache_reads  += getattr(usage, "cache_read_input_tokens", 0) or 0
+        self.stats.cache_reads += getattr(usage, "cache_read_input_tokens", 0) or 0
         self.stats.uncached_tokens += getattr(usage, "input_tokens", 0) or 0
 
     # ------------------------------------------------------------------ #

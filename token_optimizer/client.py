@@ -38,9 +38,9 @@ class OptimizedClient:
         api_key: str | None = None,
         stable_system: str = "",
         cache_ttl: CacheTTL = "5m",
-        max_input_tokens: int | None = None,   # abort if over this limit
+        max_input_tokens: int | None = None,  # abort if over this limit
         default_max_tokens: int = 4096,
-        auto_route: bool = True,               # enable smart model routing
+        auto_route: bool = True,  # enable smart model routing
         default_model: str = "claude-sonnet-4-6",
     ) -> None:
         self._sdk = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
@@ -66,7 +66,7 @@ class OptimizedClient:
         system: str | None = None,
         model: str | None = None,
         max_tokens: int | None = None,
-        effort: str = "medium",              # low | medium | high | max
+        effort: str = "medium",  # low | medium | high | max
         force_complexity: TaskComplexity | None = None,
         extra_params: dict[str, Any] | None = None,
     ) -> str:
@@ -85,7 +85,9 @@ class OptimizedClient:
 
         # 3. Token guard
         if self._max_input_tokens:
-            over, count = self._counter.should_abort(messages, self._max_input_tokens, system_blocks)
+            over, count = self._counter.should_abort(
+                messages, self._max_input_tokens, system_blocks
+            )
             if over:
                 raise ValueError(
                     f"Request aborted: {count:,} input tokens exceeds limit of "
@@ -199,9 +201,10 @@ class OptimizedClient:
         last_full = msgs[-2]
         content = last_full.get("content")
         if isinstance(content, str) and content:
-            msgs[-2] = dict(last_full, content=[
-                {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
-            ])
+            msgs[-2] = dict(
+                last_full,
+                content=[{"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}],
+            )
         elif isinstance(content, list) and content:
             new_content = list(content)
             new_content[-1] = dict(content[-1], cache_control={"type": "ephemeral"})

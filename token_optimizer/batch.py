@@ -147,12 +147,8 @@ class BatchProcessor:
             custom_id = result.custom_id
             if result.result.type == "succeeded":
                 msg = result.result.message
-                text = next(
-                    (b.text for b in msg.content if b.type == "text"), ""
-                )
-                tokens = (
-                    getattr(msg.usage, "input_tokens", 0) or 0
-                ) + (
+                text = next((b.text for b in msg.content if b.type == "text"), "")
+                tokens = (getattr(msg.usage, "input_tokens", 0) or 0) + (
                     getattr(msg.usage, "output_tokens", 0) or 0
                 )
                 results[custom_id] = BatchResult(custom_id, text, None, tokens)

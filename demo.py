@@ -9,17 +9,18 @@ Usage:
 from __future__ import annotations
 
 import os
+
 import anthropic
 
 from token_optimizer import (
-    OptimizedClient,
-    CacheManager,
-    ModelRouter,
-    TaskComplexity,
-    ContextCompressor,
     BatchProcessor,
-    TokenCounter,
+    CacheManager,
+    ContextCompressor,
     CostEstimator,
+    ModelRouter,
+    OptimizedClient,
+    TaskComplexity,
+    TokenCounter,
 )
 
 SEPARATOR = "=" * 60
@@ -89,9 +90,9 @@ def demo_caching(client: anthropic.Anthropic) -> None:
         u = response.usage
         print(
             f"  Request {i}: "
-            f"input={getattr(u,'input_tokens',0):4d} "
-            f"write={getattr(u,'cache_creation_input_tokens',0):4d} "
-            f"read={getattr(u,'cache_read_input_tokens',0):4d} "
+            f"input={getattr(u, 'input_tokens', 0):4d} "
+            f"write={getattr(u, 'cache_creation_input_tokens', 0):4d} "
+            f"read={getattr(u, 'cache_read_input_tokens', 0):4d} "
             f"cost=${this_cost:.6f}"
         )
 
@@ -107,7 +108,7 @@ def demo_compression(client: anthropic.Anthropic) -> None:
         client,
         model="claude-haiku-4-5",
         strategy="client",
-        max_tokens_before_compress=300,   # low threshold for demo
+        max_tokens_before_compress=300,  # low threshold for demo
         system="You are a knowledgeable assistant.",
     )
 
@@ -178,7 +179,8 @@ def demo_token_counting(client: anthropic.Anthropic) -> None:
             "messages": [
                 {
                     "role": "user",
-                    "content": "Please summarize the following:\n" + "Python is a general-purpose programming language. " * 50,
+                    "content": "Please summarize the following:\n"
+                    + "Python is a general-purpose programming language. " * 50,
                 }
             ],
             "expected_output": 200,

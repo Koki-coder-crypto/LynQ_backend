@@ -35,7 +35,7 @@ class ContextCompressor:
         self,
         client: anthropic.Anthropic,
         model: str = "claude-opus-4-7",
-        strategy: str = "server",           # "server" | "client"
+        strategy: str = "server",  # "server" | "client"
         max_tokens_before_compress: int = 10_000,
         system: str = "You are a helpful assistant.",
     ) -> None:
@@ -44,7 +44,7 @@ class ContextCompressor:
         self._strategy = strategy
         self._max_tokens = max_tokens_before_compress
         self._system = system
-        self._history: list = []             # beta message params for server / dicts for client
+        self._history: list = []  # beta message params for server / dicts for client
         self._total_tokens_used = 0
         self._compressions_done = 0
 
@@ -90,16 +90,13 @@ class ContextCompressor:
             max_tokens=4096,
             system=self._system,
             messages=self._history,
-            context_management={
-                "edits": [{"type": "compact_20260112"}]
-            },
+            context_management={"edits": [{"type": "compact_20260112"}]},
         )
 
         # Must append full content list — not just the text string
         self._history.append({"role": "assistant", "content": response.content})
-        self._total_tokens_used += (
-            (getattr(response.usage, "input_tokens", 0) or 0)
-            + (getattr(response.usage, "output_tokens", 0) or 0)
+        self._total_tokens_used += (getattr(response.usage, "input_tokens", 0) or 0) + (
+            getattr(response.usage, "output_tokens", 0) or 0
         )
 
         # Check if compaction occurred this turn
@@ -135,13 +132,10 @@ class ContextCompressor:
             messages=self._history,
         )
 
-        reply_text = next(
-            (b.text for b in response.content if b.type == "text"), ""
-        )
+        reply_text = next((b.text for b in response.content if b.type == "text"), "")
         self._history.append({"role": "assistant", "content": reply_text})
-        self._total_tokens_used += (
-            (getattr(response.usage, "input_tokens", 0) or 0)
-            + (getattr(response.usage, "output_tokens", 0) or 0)
+        self._total_tokens_used += (getattr(response.usage, "input_tokens", 0) or 0) + (
+            getattr(response.usage, "output_tokens", 0) or 0
         )
         return reply_text
 
@@ -169,9 +163,7 @@ class ContextCompressor:
                 }
             ],
         )
-        summary = next(
-            (b.text for b in summary_response.content if b.type == "text"), ""
-        )
+        summary = next((b.text for b in summary_response.content if b.type == "text"), "")
 
         # Replace history with the summary + most-recent user message
         new_user_msg = self._history[-1]

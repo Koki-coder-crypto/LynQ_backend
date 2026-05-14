@@ -14,6 +14,7 @@ Usage:
     claude-team --demo           # demo (no API key required)
     claude-team --preset dev     # dev team preset
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,23 +26,23 @@ import time
 from dataclasses import dataclass
 
 from anthropic import AsyncAnthropic
+from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Footer, Header, Input, Label, ProgressBar, RichLog, Static
-from textual import work
 
 # ── Constants ─────────────────────────────────────────────────────────────── #
 
 CONTEXT_WINDOWS = {
-    "claude-haiku-4-5":    200_000,
-    "claude-sonnet-4-6":  1_000_000,
-    "claude-opus-4-7":    1_000_000,
+    "claude-haiku-4-5": 200_000,
+    "claude-sonnet-4-6": 1_000_000,
+    "claude-opus-4-7": 1_000_000,
 }
 PRICING = {
-    "claude-haiku-4-5":   {"input": 1.00,  "output": 5.00},
-    "claude-sonnet-4-6":  {"input": 3.00,  "output": 15.00},
-    "claude-opus-4-7":    {"input": 5.00,  "output": 25.00},
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00},
 }
 
 DIRECTOR_SYSTEM = """\
@@ -71,19 +72,20 @@ Always respond in English.
 
 # ── Data classes ──────────────────────────────────────────────────────────── #
 
+
 @dataclass
 class WorkerConfig:
-    name:       str
-    model:      str
-    system:     str
-    color:      str = "green"
+    name: str
+    model: str
+    system: str
+    color: str = "green"
     max_tokens: int = 1024
 
 
 @dataclass
 class WorkerState:
-    config:       WorkerConfig
-    input_tokens:  int = 0
+    config: WorkerConfig
+    input_tokens: int = 0
     output_tokens: int = 0
 
     @property
@@ -101,50 +103,81 @@ class WorkerState:
 
 WORKER_PRESETS: dict[str, list[WorkerConfig]] = {
     "default": [
-        WorkerConfig("Coder",    "claude-haiku-4-5", color="green",
-                     system="You are a Python expert. Write concise code with type hints. Keep explanations minimal."),
-        WorkerConfig("Research", "claude-haiku-4-5", color="yellow",
-                     system="You are a research specialist. Summarize facts and key points in bullet points concisely."),
+        WorkerConfig(
+            "Coder",
+            "claude-haiku-4-5",
+            color="green",
+            system="You are a Python expert. Write concise code with type hints. Keep explanations minimal.",
+        ),
+        WorkerConfig(
+            "Research",
+            "claude-haiku-4-5",
+            color="yellow",
+            system="You are a research specialist. Summarize facts and key points in bullet points concisely.",
+        ),
     ],
     "dev": [
-        WorkerConfig("Coder",    "claude-haiku-4-5", color="green",
-                     system="You are a senior Python engineer. Write production-quality code."),
-        WorkerConfig("Reviewer", "claude-haiku-4-5", color="magenta",
-                     system="You are a code reviewer. Point out issues and improvements in bullet points."),
+        WorkerConfig(
+            "Coder",
+            "claude-haiku-4-5",
+            color="green",
+            system="You are a senior Python engineer. Write production-quality code.",
+        ),
+        WorkerConfig(
+            "Reviewer",
+            "claude-haiku-4-5",
+            color="magenta",
+            system="You are a code reviewer. Point out issues and improvements in bullet points.",
+        ),
     ],
     "research": [
-        WorkerConfig("Finder",   "claude-haiku-4-5", color="yellow",
-                     system="You are an information gathering specialist. List relevant facts and figures."),
-        WorkerConfig("Analyst",  "claude-haiku-4-5", color="cyan",
-                     system="You are an analyst. Analyze data to derive patterns and insights."),
+        WorkerConfig(
+            "Finder",
+            "claude-haiku-4-5",
+            color="yellow",
+            system="You are an information gathering specialist. List relevant facts and figures.",
+        ),
+        WorkerConfig(
+            "Analyst",
+            "claude-haiku-4-5",
+            color="cyan",
+            system="You are an analyst. Analyze data to derive patterns and insights.",
+        ),
     ],
     "minimal": [
-        WorkerConfig("Worker",   "claude-haiku-4-5", color="green",
-                     system="You are a general-purpose assistant. Answer concisely."),
+        WorkerConfig(
+            "Worker",
+            "claude-haiku-4-5",
+            color="green",
+            system="You are a general-purpose assistant. Answer concisely.",
+        ),
     ],
 }
 
 
 # ── Utilities ─────────────────────────────────────────────────────────────── #
 
+
 def parse_dispatch(text: str) -> dict[str, str]:
     """Extract agent instructions from a <<<DISPATCH>>> block."""
-    m = re.search(r'<<<DISPATCH>>>(.*?)<<<END_DISPATCH>>>', text, re.DOTALL)
+    m = re.search(r"<<<DISPATCH>>>(.*?)<<<END_DISPATCH>>>", text, re.DOTALL)
     if not m:
         return {}
     tasks: dict[str, str] = {}
     for line in m.group(1).strip().splitlines():
         line = line.strip()
-        if ':' in line:
-            agent, task = line.split(':', 1)
+        if ":" in line:
+            agent, task = line.split(":", 1)
             tasks[agent.strip().upper()] = task.strip()
     return tasks
 
 
 # ── Widgets ──────────────────────────────────────────────────────────────── #
 
+
 class StreamBuf(Static):
     """Streaming text buffer widget."""
+
     def __init__(self, **kw):
         super().__init__("", **kw)
         self._buf = ""
@@ -164,6 +197,7 @@ class StreamBuf(Static):
 
 class DirectorPanel(Vertical):
     """Left pane: conversation with Director."""
+
     DEFAULT_CSS = """
     DirectorPanel {
         width: 45%;
@@ -216,12 +250,13 @@ class DirectorPanel(Vertical):
         self.query_one("#d-ctx-bar", ProgressBar).progress = pct
         col = "green" if pct < 50 else ("yellow" if pct < 80 else "red")
         self.query_one("#d-stat", Label).update(
-            f"[{col}]ctx {pct:.1f}%[/]  {self.input_tokens/1000:.1f}K tokens  [dim]${cost:.4f}[/]"
+            f"[{col}]ctx {pct:.1f}%[/]  {self.input_tokens / 1000:.1f}K tokens  [dim]${cost:.4f}[/]"
         )
 
 
 class WorkerPanel(Vertical):
     """Right pane: worker agent."""
+
     DEFAULT_CSS = """
     WorkerPanel {
         width: 1fr;
@@ -249,8 +284,12 @@ class WorkerPanel(Vertical):
         yield Label("[dim]Idle[/]", id="w-stat", markup=True)
 
     def start_task(self, task: str) -> None:
-        self.query_one("#w-log", RichLog).write(f"[dim]← {task[:60]}{'…' if len(task)>60 else ''}[/]")
-        self.query_one("#w-stream", StreamBuf).reset(f"[bold {self.state.config.color}]{self.state.config.name}:[/] ")
+        self.query_one("#w-log", RichLog).write(
+            f"[dim]← {task[:60]}{'…' if len(task) > 60 else ''}[/]"
+        )
+        self.query_one("#w-stream", StreamBuf).reset(
+            f"[bold {self.state.config.color}]{self.state.config.name}:[/] "
+        )
 
     def stream(self, chunk: str) -> None:
         self.query_one("#w-stream", StreamBuf).append(chunk)
@@ -269,7 +308,7 @@ class WorkerPanel(Vertical):
         col = "green" if pct < 50 else ("yellow" if pct < 80 else "red")
         self.query_one("#w-bar", ProgressBar).progress = pct
         self.query_one("#w-stat", Label).update(
-            f"[{col}]ctx {pct:.1f}%[/]  {s.input_tokens/1000:.1f}K  [dim]${s.cost_usd:.4f}[/]"
+            f"[{col}]ctx {pct:.1f}%[/]  {s.input_tokens / 1000:.1f}K  [dim]${s.cost_usd:.4f}[/]"
         )
 
 
@@ -281,18 +320,19 @@ class GlobalBar(Static):
     }
     """
 
-    def update_stats(self, dir_panel: DirectorPanel, workers: list[WorkerState], start: float) -> None:
+    def update_stats(
+        self, dir_panel: DirectorPanel, workers: list[WorkerState], start: float
+    ) -> None:
         elapsed = time.time() - start
         mins, secs = divmod(int(elapsed), 60)
-        all_inp  = dir_panel.input_tokens  + sum(w.input_tokens  for w in workers)
-        all_out  = dir_panel.output_tokens + sum(w.output_tokens for w in workers)
+        all_inp = dir_panel.input_tokens + sum(w.input_tokens for w in workers)
+        all_out = dir_panel.output_tokens + sum(w.output_tokens for w in workers)
         all_cost = (
-            (dir_panel.input_tokens  * PRICING["claude-sonnet-4-6"]["input"]
-             + dir_panel.output_tokens * PRICING["claude-sonnet-4-6"]["output"]) / 1_000_000
-            + sum(w.cost_usd for w in workers)
-        )
+            dir_panel.input_tokens * PRICING["claude-sonnet-4-6"]["input"]
+            + dir_panel.output_tokens * PRICING["claude-sonnet-4-6"]["output"]
+        ) / 1_000_000 + sum(w.cost_usd for w in workers)
         self.update(
-            f"Total: [bold]{all_inp+all_out:,}[/] tokens  |  "
+            f"Total: [bold]{all_inp + all_out:,}[/] tokens  |  "
             f"Cost: [bold]${all_cost:.4f}[/]  |  "
             f"Elapsed: {mins}m {secs:02d}s  |  "
             f"[green]Director → Workers auto-parallel[/]"
@@ -301,10 +341,11 @@ class GlobalBar(Static):
 
 # ── Main app ──────────────────────────────────────────────────────────────── #
 
+
 class DirectorTeamApp(App[None]):
     """Director-led team agent UI."""
 
-    TITLE     = "Lynq Team — Director Auto-Dispatch"
+    TITLE = "Lynq Team — Director Auto-Dispatch"
     SUB_TITLE = "Type → sent to Director → team processes in parallel  |  Ctrl+Q=Quit"
 
     CSS = """
@@ -323,13 +364,13 @@ class DirectorTeamApp(App[None]):
 
     def __init__(self, workers: list[WorkerConfig], demo: bool = False) -> None:
         super().__init__()
-        self._demo          = demo
+        self._demo = demo
         self._worker_states = [WorkerState(config=w) for w in workers]
-        self._director      = DirectorPanel()
+        self._director = DirectorPanel()
         self._worker_panels: list[WorkerPanel] = []
         self._director_history: list[dict] = []
-        self._start         = time.time()
-        self._client        = None if demo else AsyncAnthropic()
+        self._start = time.time()
+        self._client = None if demo else AsyncAnthropic()
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -412,8 +453,7 @@ class DirectorTeamApp(App[None]):
 
         # ④ Return results to Director for synthesis
         results_text = "\n\n".join(
-            f"[{name} result]\n{result}"
-            for name, result in worker_results.items()
+            f"[{name} result]\n{result}" for name, result in worker_results.items()
         )
         feedback = (
             f"The team has finished. Here are each agent's results:\n\n{results_text}\n\n"
@@ -421,7 +461,7 @@ class DirectorTeamApp(App[None]):
         )
 
         self._director_history.append({"role": "assistant", "content": director_response})
-        self._director_history.append({"role": "user",      "content": feedback})
+        self._director_history.append({"role": "user", "content": feedback})
 
         dir_panel.start_reply("[bold green]Director (synthesis):[/] ")
         await self._call_director()
@@ -447,7 +487,7 @@ class DirectorTeamApp(App[None]):
                     full += chunk
                     dir_panel.stream(chunk)
                 final = await stream.get_final_message()
-            dir_panel.input_tokens  += final.usage.input_tokens
+            dir_panel.input_tokens += final.usage.input_tokens
             dir_panel.output_tokens += final.usage.output_tokens
             dir_panel.update_stats()
         except Exception as e:
@@ -494,7 +534,7 @@ class DirectorTeamApp(App[None]):
                     full += chunk
                     panel.stream(chunk)
                 final = await stream.get_final_message()
-            state.input_tokens  += final.usage.input_tokens
+            state.input_tokens += final.usage.input_tokens
             state.output_tokens += final.usage.output_tokens
         except Exception as e:
             full = f"[ERROR: {e}]"
@@ -546,16 +586,15 @@ class DirectorTeamApp(App[None]):
             responses = self._DEMO_RESEARCH
         resp = responses[self._demo_turn % len(responses)]
         panel = next(
-            (p for p in self._worker_panels
-             if p.state.config.name.upper() == name.upper()),
-            self._worker_panels[0] if self._worker_panels else None
+            (p for p in self._worker_panels if p.state.config.name.upper() == name.upper()),
+            self._worker_panels[0] if self._worker_panels else None,
         )
         if panel:
             for char in resp:
                 panel.stream(char)
                 await asyncio.sleep(0.008)
             state = panel.state
-            state.input_tokens  += len(task.split()) * 4 + 300
+            state.input_tokens += len(task.split()) * 4 + 300
             state.output_tokens += len(resp.split()) * 4
         self._demo_turn += 1
         return resp
@@ -563,19 +602,20 @@ class DirectorTeamApp(App[None]):
 
 # ── Backwards compatibility ─────────────────────────────────────────────── #
 
+
 def make_presets() -> dict[str, list]:
     return {k: v for k, v in WORKER_PRESETS.items()}
 
 
 # ── Entry point ──────────────────────────────────────────────────────────── #
 
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Lynq Team Agent — Director auto-dispatch")
-    ap.add_argument("--preset", default="default",
-                    choices=list(WORKER_PRESETS.keys()),
-                    help="Worker preset")
-    ap.add_argument("--demo",   action="store_true",
-                    help="Demo mode (no API key required)")
+    ap.add_argument(
+        "--preset", default="default", choices=list(WORKER_PRESETS.keys()), help="Worker preset"
+    )
+    ap.add_argument("--demo", action="store_true", help="Demo mode (no API key required)")
     args = ap.parse_args()
 
     if not args.demo and not os.environ.get("ANTHROPIC_API_KEY"):
@@ -593,12 +633,12 @@ def main() -> None:
         sys.exit(1)
 
     workers = WORKER_PRESETS[args.preset]
-    mode    = "Demo" if args.demo else "Production"
+    mode = "Demo" if args.demo else "Production"
     print(f"\n{mode} mode / {args.preset} preset")
     print("  Director: claude-sonnet-4-6")
     for w in workers:
         p = PRICING[w.model]
-        print(f"  {w.name:12s}: {w.model.replace('claude-','')}  ${p['input']:.2f}/1M input")
+        print(f"  {w.name:12s}: {w.model.replace('claude-', '')}  ${p['input']:.2f}/1M input")
     print()
     print("  * Input always goes to Director → auto-dispatched to workers in parallel")
     print()

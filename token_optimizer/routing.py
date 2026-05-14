@@ -15,23 +15,23 @@ from enum import Enum
 
 
 class TaskComplexity(Enum):
-    SIMPLE = "simple"       # → haiku-4-5
-    STANDARD = "standard"   # → sonnet-4-6
-    COMPLEX = "complex"     # → opus-4-7
+    SIMPLE = "simple"  # → haiku-4-5
+    STANDARD = "standard"  # → sonnet-4-6
+    COMPLEX = "complex"  # → opus-4-7
 
 
 # Model IDs used by the router
 MODEL_MAP = {
-    TaskComplexity.SIMPLE:   "claude-haiku-4-5",
+    TaskComplexity.SIMPLE: "claude-haiku-4-5",
     TaskComplexity.STANDARD: "claude-sonnet-4-6",
-    TaskComplexity.COMPLEX:  "claude-opus-4-7",
+    TaskComplexity.COMPLEX: "claude-opus-4-7",
 }
 
 # $/1M tokens for cost logging
 PRICING = {
-    "claude-haiku-4-5":   {"input": 1.00,  "output": 5.00},
-    "claude-sonnet-4-6":  {"input": 3.00,  "output": 15.00},
-    "claude-opus-4-7":    {"input": 5.00,  "output": 25.00},
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00},
 }
 
 _COMPLEX_KEYWORDS = re.compile(
@@ -93,10 +93,9 @@ class ModelRouter:
     ) -> tuple[TaskComplexity, str]:
         # Combine all text for analysis
         text = " ".join(
-            (m.get("content") or "") if isinstance(m.get("content"), str)
-            else " ".join(
-                b.get("text", "") for b in m.get("content", []) if isinstance(b, dict)
-            )
+            (m.get("content") or "")
+            if isinstance(m.get("content"), str)
+            else " ".join(b.get("text", "") for b in m.get("content", []) if isinstance(b, dict))
             for m in messages
         )
         combined = (system + " " + text).strip()

@@ -7,9 +7,9 @@ from __future__ import annotations
 import anthropic
 
 PRICING = {
-    "claude-haiku-4-5":   {"input": 1.00,  "output": 5.00,  "cache_write": 1.25,  "cache_read": 0.10},
-    "claude-sonnet-4-6":  {"input": 3.00,  "output": 15.00, "cache_write": 3.75,  "cache_read": 0.30},
-    "claude-opus-4-7":    {"input": 5.00,  "output": 25.00, "cache_write": 6.25,  "cache_read": 0.50},
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00, "cache_write": 1.25, "cache_read": 0.10},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00, "cache_write": 3.75, "cache_read": 0.30},
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00, "cache_write": 6.25, "cache_read": 0.50},
 }
 
 
@@ -79,8 +79,8 @@ class CostEstimator:
         """Record usage from a response and return this request's cost."""
         inp = getattr(usage, "input_tokens", 0) or 0
         out = getattr(usage, "output_tokens", 0) or 0
-        cw  = getattr(usage, "cache_creation_input_tokens", 0) or 0
-        cr  = getattr(usage, "cache_read_input_tokens", 0) or 0
+        cw = getattr(usage, "cache_creation_input_tokens", 0) or 0
+        cr = getattr(usage, "cache_read_input_tokens", 0) or 0
         cost = self.estimate(inp, out, cw, cr)
         self._total_usd += cost
         self._total_input += inp
