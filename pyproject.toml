@@ -3,14 +3,41 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "token-optimizer"
+name = "lynq-backend"
 version = "0.1.0"
-description = "Claude API token reduction toolkit"
+description = "Lynq QR app — Claude API token optimization and multi-agent backend"
+authors = [{ name = "Koki", email = "kouki_1203@icloud.com" }]
+license = { text = "MIT" }
+readme = "README.md"
 requires-python = ">=3.11"
+keywords = ["claude", "anthropic", "ai", "token", "optimization", "multi-agent"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "anthropic>=0.92.0",
     "textual>=0.61.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.0",
+    "pyright>=1.1.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Koki-coder-crypto/LynQ_backend"
+Repository = "https://github.com/Koki-coder-crypto/LynQ_backend"
+Issues = "https://github.com/Koki-coder-crypto/LynQ_backend/issues"
+Changelog = "https://github.com/Koki-coder-crypto/LynQ_backend/blob/master/CHANGELOG.md"
 
 [project.scripts]
 claude-team = "token_optimizer.team:main"
@@ -18,3 +45,48 @@ claude-team = "token_optimizer.team:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["token_optimizer*"]
+
+# ── Ruff (linter) ─────────────────────────────────────────────────────────── #
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["token_optimizer"]
+
+# ── Pyright (type checker) ────────────────────────────────────────────────── #
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+ignore = ["**/__pycache__"]
+
+# ── pytest ────────────────────────────────────────────────────────────────── #
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+# ── python-semantic-release ───────────────────────────────────────────────── #
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "master"
+changelog_file = "CHANGELOG.md"
+build_command = "pip install build && python -m build"
+tag_format = "v{version}"
+
+[tool.semantic_release.branches.master]
+match = "master"
+prerelease = false
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true
+upload_to_pypi = true
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "chore", "ci"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]

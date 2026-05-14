@@ -1,0 +1,87 @@
+name: AI Issue Triage
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    name: Auto-triage with Claude
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install anthropic
+        run: pip install anthropic
+
+      - name: Triage issue with Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          python - <<'EOF'
+          import anthropic, os, subprocess, json
+
+          title  = os.environ["ISSUE_TITLE"]
+          body   = os.environ["ISSUE_BODY"] or ""
+          number = os.environ["ISSUE_NUMBER"]
+          repo   = os.environ["REPO"]
+
+          client = anthropic.Anthropic()
+          msg = client.messages.create(
+              model="claude-haiku-4-5",
+              max_tokens=512,
+              messages=[{
+                  "role": "user",
+                  "content": f"""Analyze this GitHub issue and respond with JSON only:
+
+          Title: {title}
+          Body: {body}
+
+          Respond with this exact JSON structure:
+          {{
+            "label": "bug" | "enhancement" | "question" | "documentation",
+            "priority": "high" | "medium" | "low",
+            "comment": "one-sentence acknowledgment and next steps (max 100 words)"
+          }}"""
+              }]
+          )
+
+          raw = msg.content[0].text.strip()
+          # Extract JSON from response
+          import re
+          m = re.search(r'\{.*\}', raw, re.DOTALL)
+          data = json.loads(m.group()) if m else {"label": "question", "priority": "medium", "comment": "Thank you for the issue! We will review it shortly."}
+
+          label    = data.get("label", "question")
+          priority = data.get("priority", "medium")
+          comment  = data.get("comment", "Thank you! We will look into this.")
+
+          # Add label
+          subprocess.run(["gh", "issue", "edit", number, "--repo", repo,
+                          "--add-label", label], capture_output=True)
+
+          # Add priority label
+          subprocess.run(["gh", "issue", "edit", number, "--repo", repo,
+                          "--add-label", f"priority:{priority}"], capture_output=True)
+
+          # Post comment
+          full_comment = f"🤖 **AI Triage**\n\n{comment}\n\n*Label: `{label}` | Priority: `{priority}`*"
+          subprocess.run(["gh", "issue", "comment", number, "--repo", repo,
+                          "--body", full_comment])
+
+          print(f"Triaged issue #{number}: {label} / {priority}")
+          EOF

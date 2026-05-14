@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for suggesting a feature!"
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: "I find it frustrating when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      placeholder: "It would be great if..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Any other approaches you thought about?
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      options:
+        - "High — core functionality"
+        - "Medium — useful improvement"
+        - "Low — nice to have"
+    validations:
+      required: true

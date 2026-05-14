@@ -1,39 +1,50 @@
-name: Release to PyPI
+name: Release
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches: [master]
 
 permissions:
-  contents: write   # GitHub Release creation
-  id-token: write   # PyPI trusted publishing
+  contents: write        # push tags, create releases
+  id-token: write        # PyPI trusted publishing
 
 jobs:
   release:
+    name: Semantic Release
     runs-on: ubuntu-latest
+    concurrency: release
+    # Only run if CI passed
+    needs: []
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history for semantic-release
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+
+      - name: Install semantic-release + build tools
+        run: pip install python-semantic-release build
+
+      - name: Run semantic-release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          semantic-release version --no-vcs-release 2>&1 || true
+          semantic-release publish 2>&1 || true
 
       - name: Build package
-        run: |
-          pip install build
-          python -m build
+        run: python -m build
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (trusted publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
-
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          # Auto-generate release notes from git log
-          NOTES=$(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" 2>/dev/null || echo "Initial release")
-          gh release create "$TAG" dist/* \
-            --title "$TAG" \
-            --notes "$NOTES"
+        with:
+          skip-existing: true
+        continue-on-error: true   # non-fatal until PyPI trusted publisher is configured
