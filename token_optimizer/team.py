@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-team.py — Director主導チームエージェント並列処理UI
+team.py — Director-led team agent with parallel processing UI
 
-仕組み:
-  1. ユーザーが入力 → Director(sonnet)に送信
-  2. Directorがタスクを分析し <<<DISPATCH>>> 形式でチームに指示
-  3. アプリがDispatchを検出 → Coder・Research を asyncio.gather で並列実行
-  4. 結果をDirectorに返す → Directorが統合して最終回答
+How it works:
+  1. User input → sent to Director (sonnet)
+  2. Director analyzes the task and issues instructions via <<<DISPATCH>>> format
+  3. App detects Dispatch → runs Coder & Research in parallel via asyncio.gather
+  4. Results returned to Director → Director synthesizes the final answer
 
-起動:
+Usage:
     export ANTHROPIC_API_KEY=sk-ant-...
-    claude-team                  # 本番モード
-    claude-team --demo           # デモ（API不要）
-    claude-team --preset dev     # 開発チーム
+    claude-team                  # production mode
+    claude-team --demo           # demo (no API key required)
+    claude-team --preset dev     # dev team preset
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Footer, Header, Input, Label, ProgressBar, RichLog, Static
 from textual import work
 
-# ── 定数 ─────────────────────────────────────────────────────────────────── #
+# ── Constants ─────────────────────────────────────────────────────────────── #
 
 CONTEXT_WINDOWS = {
     "claude-haiku-4-5":    200_000,
@@ -45,33 +45,32 @@ PRICING = {
     "claude-opus-4-7":    {"input": 5.00,  "output": 25.00},
 }
 
-# Directorのシステムプロンプト
 DIRECTOR_SYSTEM = """\
-あなたはAIチームの司令官（Director）です。
-ユーザーのリクエストを受け取り、チームを指揮します。
+You are the Director of an AI team.
+You receive the user's request and coordinate the team.
 
-チームメンバー:
-- CODER  : Python実装・コード生成・技術的な実装
-- RESEARCH: 情報調査・ベストプラクティス・分析・比較
+Team members:
+- CODER   : Python implementation, code generation, technical tasks
+- RESEARCH: Information gathering, best practices, analysis, comparison
 
-【ルール】
-1. 複数エージェントで並列処理できるタスクは以下の形式で指示してください:
+Rules:
+1. For tasks that can be parallelized across agents, use this format:
    <<<DISPATCH>>>
-   CODER: [Coderへの具体的な指示 - 1〜2文]
-   RESEARCH: [Researchへの具体的な指示 - 1〜2文]
+   CODER: [specific instruction for Coder — 1-2 sentences]
+   RESEARCH: [specific instruction for Research — 1-2 sentences]
    <<<END_DISPATCH>>>
 
-2. DISPATCHブロックの後に、あなたの計画や概要を簡単に説明してください。
+2. After the DISPATCH block, briefly describe your plan or overview.
 
-3. チームの結果を受け取ったら、それを統合して最終的な回答をまとめてください。
+3. When you receive the team's results, integrate them into a final answer.
 
-4. 単純な質問には自分で直接答えてください（DISPATCHは不要）。
+4. For simple questions, answer directly yourself (no DISPATCH needed).
 
-必ず日本語で回答してください。
+Always respond in English.
 """
 
 
-# ── データクラス ──────────────────────────────────────────────────────────── #
+# ── Data classes ──────────────────────────────────────────────────────────── #
 
 @dataclass
 class WorkerConfig:
@@ -99,38 +98,38 @@ class WorkerState:
         return (self.input_tokens * p["input"] + self.output_tokens * p["output"]) / 1_000_000
 
 
-# ── プリセット ────────────────────────────────────────────────────────────── #
+# ── Presets ────────────────────────────────────────────────────────────────── #
 
 WORKER_PRESETS: dict[str, list[WorkerConfig]] = {
     "default": [
         WorkerConfig("Coder",    "claude-haiku-4-5", color="green",
-                     system="あなたはPythonエキスパートです。型ヒント付きで簡潔なコードを書いてください。説明は最小限に。"),
+                     system="You are a Python expert. Write concise code with type hints. Keep explanations minimal."),
         WorkerConfig("Research", "claude-haiku-4-5", color="yellow",
-                     system="あなたは調査の専門家です。事実と要点を箇条書きで簡潔にまとめてください。"),
+                     system="You are a research specialist. Summarize facts and key points in bullet points concisely."),
     ],
     "dev": [
         WorkerConfig("Coder",    "claude-haiku-4-5", color="green",
-                     system="あなたはシニアPythonエンジニアです。本番品質のコードを書いてください。"),
+                     system="You are a senior Python engineer. Write production-quality code."),
         WorkerConfig("Reviewer", "claude-haiku-4-5", color="magenta",
-                     system="あなたはコードレビュアーです。問題点と改善案を箇条書きで指摘してください。"),
+                     system="You are a code reviewer. Point out issues and improvements in bullet points."),
     ],
     "research": [
         WorkerConfig("Finder",   "claude-haiku-4-5", color="yellow",
-                     system="あなたは情報収集の専門家です。関連する事実と数字を列挙してください。"),
+                     system="You are an information gathering specialist. List relevant facts and figures."),
         WorkerConfig("Analyst",  "claude-haiku-4-5", color="cyan",
-                     system="あなたはアナリストです。データを分析してパターンと洞察を導いてください。"),
+                     system="You are an analyst. Analyze data to derive patterns and insights."),
     ],
     "minimal": [
         WorkerConfig("Worker",   "claude-haiku-4-5", color="green",
-                     system="あなたは汎用アシスタントです。簡潔に回答してください。"),
+                     system="You are a general-purpose assistant. Answer concisely."),
     ],
 }
 
 
-# ── ユーティリティ ────────────────────────────────────────────────────────── #
+# ── Utilities ─────────────────────────────────────────────────────────────── #
 
 def parse_dispatch(text: str) -> dict[str, str]:
-    """<<<DISPATCH>>>ブロックからエージェント指示を抽出する"""
+    """Extract agent instructions from a <<<DISPATCH>>> block."""
     m = re.search(r'<<<DISPATCH>>>(.*?)<<<END_DISPATCH>>>', text, re.DOTALL)
     if not m:
         return {}
@@ -143,10 +142,10 @@ def parse_dispatch(text: str) -> dict[str, str]:
     return tasks
 
 
-# ── ウィジェット ──────────────────────────────────────────────────────────── #
+# ── Widgets ──────────────────────────────────────────────────────────────── #
 
 class StreamBuf(Static):
-    """ストリーミングテキストバッファ"""
+    """Streaming text buffer widget."""
     def __init__(self, **kw):
         super().__init__("", **kw)
         self._buf = ""
@@ -165,7 +164,7 @@ class StreamBuf(Static):
 
 
 class DirectorPanel(Vertical):
-    """左ペイン: Director との会話"""
+    """Left pane: conversation with Director."""
     DEFAULT_CSS = """
     DirectorPanel {
         width: 45%;
@@ -187,11 +186,11 @@ class DirectorPanel(Vertical):
 
     def compose(self) -> ComposeResult:
         m = self.model.replace("claude-", "")
-        yield Label(f"[bold green]■ Director[/]  [dim]{m}[/]  [dim]←ここに入力[/]", id="d-title")
+        yield Label(f"[bold green]■ Director[/]  [dim]{m}[/]  [dim]← type here[/]", id="d-title")
         yield RichLog(id="d-log", highlight=True, markup=True, wrap=True)
         yield StreamBuf(id="d-stream")
         yield ProgressBar(total=100, show_eta=False, id="d-ctx-bar")
-        yield Label("[dim]待機中[/]", id="d-stat", markup=True)
+        yield Label("[dim]Idle[/]", id="d-stat", markup=True)
 
     def add_user(self, text: str) -> None:
         self.query_one("#d-log", RichLog).write(f"[bold cyan]You:[/] {text}")
@@ -223,7 +222,7 @@ class DirectorPanel(Vertical):
 
 
 class WorkerPanel(Vertical):
-    """右ペイン内: ワーカーエージェント"""
+    """Right pane: worker agent."""
     DEFAULT_CSS = """
     WorkerPanel {
         width: 1fr;
@@ -248,7 +247,7 @@ class WorkerPanel(Vertical):
         yield RichLog(id="w-log", highlight=True, markup=True, wrap=True)
         yield StreamBuf(id="w-stream")
         yield ProgressBar(total=100, show_eta=False, id="w-bar")
-        yield Label("[dim]待機中[/]", id="w-stat", markup=True)
+        yield Label("[dim]Idle[/]", id="w-stat", markup=True)
 
     def start_task(self, task: str) -> None:
         self.query_one("#w-log", RichLog).write(f"[dim]← {task[:60]}{'…' if len(task)>60 else ''}[/]")
@@ -294,20 +293,20 @@ class GlobalBar(Static):
             + sum(w.cost_usd for w in workers)
         )
         self.update(
-            f"合計: [bold]{all_inp+all_out:,}[/] tokens  |  "
-            f"コスト: [bold]${all_cost:.4f}[/]  |  "
-            f"経過: {mins}m {secs:02d}s  |  "
-            f"[green]Director→Worker で自動並列処理[/]"
+            f"Total: [bold]{all_inp+all_out:,}[/] tokens  |  "
+            f"Cost: [bold]${all_cost:.4f}[/]  |  "
+            f"Elapsed: {mins}m {secs:02d}s  |  "
+            f"[green]Director → Workers auto-parallel[/]"
         )
 
 
-# ── メインアプリ ──────────────────────────────────────────────────────────── #
+# ── Main app ──────────────────────────────────────────────────────────────── #
 
 class DirectorTeamApp(App[None]):
-    """Director主導チームエージェント UI"""
+    """Director-led team agent UI."""
 
-    TITLE     = "Claude Team — Director 自動指揮"
-    SUB_TITLE = "入力 → Director へ自動送信 → チームが並列処理  |  Ctrl+Q=終了"
+    TITLE     = "Lynq Team — Director Auto-Dispatch"
+    SUB_TITLE = "Type → sent to Director → team processes in parallel  |  Ctrl+Q=Quit"
 
     CSS = """
     Screen { layout: vertical; }
@@ -319,8 +318,8 @@ class DirectorTeamApp(App[None]):
     """
 
     BINDINGS = [
-        Binding("ctrl+q", "quit", "終了"),
-        Binding("escape", "quit", "終了", show=False),
+        Binding("ctrl+q", "quit", "Quit"),
+        Binding("escape", "quit", "Quit", show=False),
     ]
 
     def __init__(self, workers: list[WorkerConfig], demo: bool = False) -> None:
@@ -344,20 +343,20 @@ class DirectorTeamApp(App[None]):
                     yield p
         with Horizontal(id="input-row"):
             yield Input(
-                placeholder="Directorに指示を入力… Director が自動でチームに振り分けます",
+                placeholder="Give Director an instruction… Director will auto-dispatch to the team",
                 id="user-input",
             )
-            yield Button("→ Director へ送信", id="send-btn", variant="primary")
-        yield GlobalBar("起動中…", id="global-bar")
+            yield Button("→ Send to Director", id="send-btn", variant="primary")
+        yield GlobalBar("Starting…", id="global-bar")
         yield Footer()
 
     def on_mount(self) -> None:
         self.set_interval(3, self._tick)
         self.query_one("#user-input", Input).focus()
-        mode = "[yellow]デモモード[/]" if self._demo else "[green]本番モード[/]"
-        self._director.set_status(f"[dim]{mode} — 準備完了。指示をどうぞ。[/]")
+        mode = "[yellow]Demo mode[/]" if self._demo else "[green]Production mode[/]"
+        self._director.set_status(f"[dim]{mode} — Ready. Give me an instruction.[/]")
         for p in self._worker_panels:
-            p.set_status("[dim]Director からの指示を待機中…[/]")
+            p.set_status("[dim]Waiting for Director's dispatch…[/]")
 
     def _tick(self) -> None:
         self.query_one("#global-bar", GlobalBar).update_stats(
@@ -382,16 +381,14 @@ class DirectorTeamApp(App[None]):
     def _orchestrate(self, message: str) -> None:
         self._run_orchestration(message)
 
-    # ── 並列オーケストレーション ─────────────────────────────────────────── #
+    # ── Parallel orchestration ───────────────────────────────────────────── #
 
     @work(exclusive=False)
     async def _run_orchestration(self, message: str) -> None:
-        """
-        Director → parse dispatch → workers parallel → Director synthesize
-        """
+        """Director → parse dispatch → workers parallel → Director synthesize"""
         dir_panel = self._director
 
-        # ① Director へ送信
+        # ① Send to Director
         dir_panel.add_user(message)
         self._director_history.append({"role": "user", "content": message})
         dir_panel.start_reply()
@@ -400,37 +397,40 @@ class DirectorTeamApp(App[None]):
 
         dir_panel.finish_reply()
 
-        # ② Dispatch ブロックを検出
+        # ② Detect Dispatch block
         tasks = parse_dispatch(director_response)
 
         if not tasks:
-            # Dispatch なし → Director が直接回答
+            # No dispatch → Director answered directly
             return
 
-        # ③ ワーカーを並列実行
-        dir_panel.set_status("[yellow]⚡ チームに配信中… 並列処理を開始します[/]")
+        # ③ Run workers in parallel
+        dir_panel.set_status("[yellow]⚡ Dispatching to team… starting parallel processing[/]")
         for p in self._worker_panels:
-            p.set_status("[yellow]⟳ 処理中…[/]")
+            p.set_status("[yellow]⟳ Processing…[/]")
 
         worker_results = await self._run_workers_parallel(tasks)
 
-        # ④ 結果を Director に返す
+        # ④ Return results to Director for synthesis
         results_text = "\n\n".join(
-            f"【{name}の結果】\n{result}"
+            f"[{name} result]\n{result}"
             for name, result in worker_results.items()
         )
-        feedback = f"チームの作業が完了しました。以下が各エージェントの結果です：\n\n{results_text}\n\nこれらを統合して最終回答をまとめてください。"
+        feedback = (
+            f"The team has finished. Here are each agent's results:\n\n{results_text}\n\n"
+            "Please integrate these into a final answer."
+        )
 
         self._director_history.append({"role": "assistant", "content": director_response})
         self._director_history.append({"role": "user",      "content": feedback})
 
-        dir_panel.start_reply("[bold green]Director (統合):[/] ")
+        dir_panel.start_reply("[bold green]Director (synthesis):[/] ")
         await self._call_director()
         dir_panel.finish_reply()
         self._tick()
 
     async def _call_director(self) -> str:
-        """Director に API 呼び出しし、ストリーミング表示する"""
+        """Call Director API with streaming display."""
         dir_panel = self._director
 
         if self._demo:
@@ -457,8 +457,7 @@ class DirectorTeamApp(App[None]):
         return full
 
     async def _run_workers_parallel(self, tasks: dict[str, str]) -> dict[str, str]:
-        """指定されたタスクを全ワーカーで並列実行する"""
-        # ワーカー名→パネルのマッピング
+        """Run all assigned tasks across workers in parallel."""
         panel_map: dict[str, tuple[WorkerPanel, WorkerState]] = {}
         for panel, state in zip(self._worker_panels, self._worker_states):
             panel_map[state.config.name.upper()] = (panel, state)
@@ -466,7 +465,6 @@ class DirectorTeamApp(App[None]):
         async def run_one(agent_name: str, task: str) -> tuple[str, str]:
             key = agent_name.upper()
             if key not in panel_map:
-                # 一致するパネルがなければ最初のパネルを使う
                 key = next(iter(panel_map))
             panel, state = panel_map[key]
             panel.start_task(task)
@@ -479,13 +477,12 @@ class DirectorTeamApp(App[None]):
             panel.update_stats()
             return agent_name, result
 
-        # 全ワーカーを同時起動
         coros = [run_one(name, task) for name, task in tasks.items()]
         results_list = await asyncio.gather(*coros)
         return dict(results_list)
 
     async def _stream_worker(self, panel: WorkerPanel, state: WorkerState, task: str) -> str:
-        """ワーカーの API 呼び出し"""
+        """Worker API call with streaming."""
         full = ""
         try:
             async with self._client.messages.stream(  # type: ignore
@@ -505,34 +502,34 @@ class DirectorTeamApp(App[None]):
             panel.stream(full)
         return full
 
-    # ── デモモード ──────────────────────────────────────────────────────────── #
+    # ── Demo mode ──────────────────────────────────────────────────────────── #
 
     _demo_turn = 0
     _DEMO_DIRECTOR = [
         (
-            "了解しました！Coderにコード実装を、Researchに調査を依頼します。\n\n"
+            "Got it! I'll ask Coder to implement the code and Research to investigate.\n\n"
             "<<<DISPATCH>>>\n"
-            "CODER: asyncio.gather を使った並列処理のPythonサンプルコードを実装してください\n"
-            "RESEARCH: Pythonの並列処理手法（asyncio・threading・multiprocessing）の比較をまとめてください\n"
+            "CODER: Implement a Python sample using asyncio.gather for parallel processing\n"
+            "RESEARCH: Summarize a comparison of Python parallelism methods (asyncio, threading, multiprocessing)\n"
             "<<<END_DISPATCH>>>\n\n"
-            "チームが並列で作業します。結果が揃い次第まとめます。"
+            "The team will work in parallel. I'll synthesize the results once they're ready."
         ),
         (
-            "承知しました。最適化を実施します。\n\n"
+            "Understood. Let's optimize.\n\n"
             "<<<DISPATCH>>>\n"
-            "CODER: 前のコードにキャッシュ機能とエラーハンドリングを追加してください\n"
-            "RESEARCH: Proプランでのトークン節約ベストプラクティスを3つ挙げてください\n"
+            "CODER: Add caching and error handling to the previous code\n"
+            "RESEARCH: List 3 token-saving best practices for Pro plan usage\n"
             "<<<END_DISPATCH>>>\n\n"
-            "両方同時に処理します。"
+            "Processing both simultaneously."
         ),
     ]
     _DEMO_CODER = [
-        "```python\nimport asyncio\n\nasync def worker(name: str, delay: float) -> str:\n    await asyncio.sleep(delay)\n    return f'{name} 完了 ({delay}秒)'\n\nasync def main() -> None:\n    # 並列実行\n    results = await asyncio.gather(\n        worker('Coder',    0.5),\n        worker('Research', 0.8),\n        worker('Analyst',  0.6),\n    )\n    for r in results: print(r)\n\nasyncio.run(main())\n```\n実装完了。3タスクを並列実行し、最長0.8秒で完了します。",
-        "```python\nfrom functools import lru_cache\nimport asyncio\n\n@lru_cache(maxsize=128)\ndef expensive_compute(n: int) -> int:\n    return sum(range(n))\n\nasync def safe_worker(name: str) -> str:\n    try:\n        result = expensive_compute(10000)\n        return f'{name}: {result}'\n    except Exception as e:\n        return f'{name}: エラー - {e}'\n```\nキャッシュとエラーハンドリングを追加しました。",
+        "```python\nimport asyncio\n\nasync def worker(name: str, delay: float) -> str:\n    await asyncio.sleep(delay)\n    return f'{name} done ({delay}s)'\n\nasync def main() -> None:\n    results = await asyncio.gather(\n        worker('Coder',    0.5),\n        worker('Research', 0.8),\n        worker('Analyst',  0.6),\n    )\n    for r in results: print(r)\n\nasyncio.run(main())\n```\nImplemented. 3 tasks run in parallel, completing in 0.8s max.",
+        "```python\nfrom functools import lru_cache\nimport asyncio\n\n@lru_cache(maxsize=128)\ndef expensive_compute(n: int) -> int:\n    return sum(range(n))\n\nasync def safe_worker(name: str) -> str:\n    try:\n        result = expensive_compute(10000)\n        return f'{name}: {result}'\n    except Exception as e:\n        return f'{name}: error - {e}'\n```\nAdded caching and error handling.",
     ]
     _DEMO_RESEARCH = [
-        "Python並列処理比較:\n• asyncio: I/O待機に最適。軽量。同一スレッド。\n• threading: GILあり。CPU処理には不向き。I/Oには有効。\n• multiprocessing: CPU処理に最適。メモリ使用量大。\n→ API呼び出し等のI/O処理には asyncio が最適。",
-        "Proプラントークン節約ベストプラクティス:\n1. cache_control で固定プロンプトをキャッシュ（最大90%削減）\n2. Haiku を Worker に使用（Sonnet比 1/3 のコスト）\n3. autoCompactEnabled でコンテキスト自動圧縮（最大80%削減）",
+        "Python parallelism comparison:\n• asyncio: Best for I/O-bound tasks. Lightweight. Single-threaded.\n• threading: Has GIL. Poor for CPU tasks. Good for I/O.\n• multiprocessing: Best for CPU tasks. Higher memory usage.\n→ asyncio is optimal for API calls and other I/O.",
+        "Pro plan token-saving best practices:\n1. Use cache_control for stable prompts (up to 90% reduction)\n2. Use Haiku for workers (1/3 cost of Sonnet)\n3. Enable autoCompact for context compression (up to 80% reduction)",
     ]
 
     async def _demo_director_response(self) -> str:
@@ -558,7 +555,6 @@ class DirectorTeamApp(App[None]):
             for char in resp:
                 panel.stream(char)
                 await asyncio.sleep(0.008)
-            # フェイクトークン更新
             state = panel.state
             state.input_tokens  += len(task.split()) * 4 + 300
             state.output_tokens += len(resp.split()) * 4
@@ -566,47 +562,46 @@ class DirectorTeamApp(App[None]):
         return resp
 
 
-# ── make_presets (後方互換) ─────────────────────────────────────────────── #
+# ── Backwards compatibility ─────────────────────────────────────────────── #
 
 def make_presets() -> dict[str, list]:
-    """後方互換: 以前のプリセット形式を返す"""
     return {k: v for k, v in WORKER_PRESETS.items()}
 
 
-# ── エントリポイント ──────────────────────────────────────────────────────── #
+# ── Entry point ──────────────────────────────────────────────────────────── #
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Claude チームエージェント — Director自動指揮")
+    ap = argparse.ArgumentParser(description="Lynq Team Agent — Director auto-dispatch")
     ap.add_argument("--preset", default="default",
                     choices=list(WORKER_PRESETS.keys()),
-                    help="ワーカープリセット")
+                    help="Worker preset")
     ap.add_argument("--demo",   action="store_true",
-                    help="デモモード（API キー不要）")
+                    help="Demo mode (no API key required)")
     args = ap.parse_args()
 
     if not args.demo and not os.environ.get("ANTHROPIC_API_KEY"):
         print()
         print("=" * 55)
-        print("  ANTHROPIC_API_KEY が設定されていません。")
+        print("  ANTHROPIC_API_KEY is not set.")
         print()
-        print("  デモモード（今すぐ画面確認）:")
+        print("  Demo mode (preview the UI now):")
         print("    claude-team --demo")
         print()
-        print("  本番モード:")
+        print("  Production mode:")
         print("    export ANTHROPIC_API_KEY=sk-ant-...")
         print("    claude-team")
         print("=" * 55)
         sys.exit(1)
 
     workers = WORKER_PRESETS[args.preset]
-    mode    = "デモ" if args.demo else "本番"
-    print(f"\n{mode}モード / {args.preset} プリセット")
+    mode    = "Demo" if args.demo else "Production"
+    print(f"\n{mode} mode / {args.preset} preset")
     print(f"  Director: claude-sonnet-4-6")
     for w in workers:
         p = PRICING[w.model]
-        print(f"  {w.name:12s}: {w.model.replace('claude-','')}  ${p['input']:.2f}/1M入力")
+        print(f"  {w.name:12s}: {w.model.replace('claude-','')}  ${p['input']:.2f}/1M input")
     print()
-    print("  ※ 入力は常に Director へ → 自動でワーカーに並列配信")
+    print("  * Input always goes to Director → auto-dispatched to workers in parallel")
     print()
 
     DirectorTeamApp(workers, demo=args.demo).run()

@@ -1,7 +1,7 @@
 """
-demo.py — Habitly token optimizer デモ
+demo.py — Lynq token optimizer demo
 
-実行方法:
+Usage:
     export ANTHROPIC_API_KEY=sk-ant-...
     python demo.py
 """
@@ -28,24 +28,24 @@ SEPARATOR = "=" * 60
 
 def demo_routing() -> None:
     print(f"\n{SEPARATOR}")
-    print("1. スマートモデルルーティング")
+    print("1. Smart Model Routing")
     print(SEPARATOR)
 
     router = ModelRouter()
     cases = [
         (
-            [{"role": "user", "content": "ポジティブ / ネガティブで分類して: 最高でした！"}],
+            [{"role": "user", "content": "Classify as positive / negative: This was amazing!"}],
             "",
             100,
         ),
         (
-            [{"role": "user", "content": "この記事を要約してください。"}],
-            "あなたはライターです。",
+            [{"role": "user", "content": "Please summarize this article."}],
+            "You are a writer.",
             500,
         ),
         (
-            [{"role": "user", "content": "Pythonのデコレータパターンを設計・実装してください。"}],
-            "あなたはシニアエンジニアです。",
+            [{"role": "user", "content": "Design and implement a Python decorator pattern."}],
+            "You are a senior engineer.",
             2000,
         ),
     ]
@@ -53,28 +53,28 @@ def demo_routing() -> None:
         decision = router.route(messages, system=system, expected_output_tokens=out_tokens)
         prompt = messages[0]["content"][:40]
         print(f"  [{decision.complexity.value:8s}] {decision.model:25s} ← {prompt}…")
-        print(f"             理由: {decision.reason}")
+        print(f"             Reason: {decision.reason}")
 
 
 def demo_caching(client: anthropic.Anthropic) -> None:
     print(f"\n{SEPARATOR}")
-    print("2. プロンプトキャッシング")
+    print("2. Prompt Caching")
     print(SEPARATOR)
 
     cm = CacheManager()
     cost = CostEstimator("claude-haiku-4-5")
 
     STABLE_SYSTEM = (
-        "あなたは日本語で回答する丁寧なアシスタントです。" * 60  # ~1000トークン相当の安定コンテンツ
+        "You are a polite and helpful assistant. " * 60  # ~1000 tokens of stable content
     )
 
     questions = [
-        "こんにちは！",
-        "今日の天気は？",
-        "おすすめの本は？",
+        "Hello!",
+        "What's the weather like today?",
+        "Can you recommend a book?",
     ]
 
-    print(f"  安定システムプロンプト: {len(STABLE_SYSTEM)} 文字")
+    print(f"  Stable system prompt: {len(STABLE_SYSTEM)} chars")
     print()
 
     for i, q in enumerate(questions, 1):
@@ -89,67 +89,67 @@ def demo_caching(client: anthropic.Anthropic) -> None:
         this_cost = cost.record(response.usage)
         u = response.usage
         print(
-            f"  リクエスト {i}: "
-            f"入力={getattr(u,'input_tokens',0):4d} "
-            f"書込={getattr(u,'cache_creation_input_tokens',0):4d} "
-            f"読込={getattr(u,'cache_read_input_tokens',0):4d} "
-            f"コスト=${this_cost:.6f}"
+            f"  Request {i}: "
+            f"input={getattr(u,'input_tokens',0):4d} "
+            f"write={getattr(u,'cache_creation_input_tokens',0):4d} "
+            f"read={getattr(u,'cache_read_input_tokens',0):4d} "
+            f"cost=${this_cost:.6f}"
         )
 
-    print(f"\n  キャッシュ統計: {cm.stats.savings_summary}")
+    print(f"\n  Cache stats: {cm.stats.savings_summary}")
 
 
 def demo_compression(client: anthropic.Anthropic) -> None:
     print(f"\n{SEPARATOR}")
-    print("3. コンテキスト圧縮（クライアントサイド要約）")
+    print("3. Context Compression (client-side summarization)")
     print(SEPARATOR)
 
     cc = ContextCompressor(
         client,
         model="claude-haiku-4-5",
         strategy="client",
-        max_tokens_before_compress=300,   # デモ用に低い閾値
-        system="あなたは物知りなアシスタントです。",
+        max_tokens_before_compress=300,   # low threshold for demo
+        system="You are a knowledgeable assistant.",
     )
 
     turns = [
-        "Pythonとは何ですか？",
-        "リスト内包表記の使い方を教えてください。",
-        "デコレータについて説明してください。",
-        "非同期処理はどう書きますか？",
-        "型ヒントの書き方は？",
+        "What is Python?",
+        "How do I use list comprehensions?",
+        "Can you explain decorators?",
+        "How do I write async code?",
+        "What is the syntax for type hints?",
     ]
 
     for turn in turns:
         reply = cc.chat(turn)
         print(f"  Q: {turn}")
         print(f"  A: {reply[:80]}…" if len(reply) > 80 else f"  A: {reply}")
-        print(f"     [圧縮回数: {cc.stats['compressions']}]")
+        print(f"     [compressions: {cc.stats['compressions']}]")
         print()
 
 
 def demo_batch(client: anthropic.Anthropic) -> None:
     print(f"\n{SEPARATOR}")
-    print("4. バッチAPI（50%コスト削減）")
+    print("4. Batch API (50% cost reduction)")
     print(SEPARATOR)
 
     bp = BatchProcessor(
         client,
         model="claude-haiku-4-5",
         max_tokens=64,
-        system="感情分析してください。'ポジティブ'または'ネガティブ'の1単語で答えてください。",
+        system="Perform sentiment analysis. Answer with exactly one word: 'positive' or 'negative'.",
         poll_interval=5,
     )
 
     items = [
-        {"id": "r1", "prompt": "この商品は最高でした！"},
-        {"id": "r2", "prompt": "全くひどいサービスで二度と使いません。"},
-        {"id": "r3", "prompt": "普通ですが特に感動はありません。"},
-        {"id": "r4", "prompt": "価格に見合った品質で満足しています！"},
-        {"id": "r5", "prompt": "配送が遅すぎて最悪でした。"},
+        {"id": "r1", "prompt": "This product was absolutely amazing!"},
+        {"id": "r2", "prompt": "Terrible service, I will never use this again."},
+        {"id": "r3", "prompt": "It was okay, nothing special."},
+        {"id": "r4", "prompt": "Great value for the price, very satisfied!"},
+        {"id": "r5", "prompt": "Delivery was way too slow, worst experience ever."},
     ]
 
-    print(f"  {len(items)} 件を一括送信中…")
+    print(f"  Submitting {len(items)} items as a batch…")
     results = bp.run(items)
 
     total_tokens = sum(r.tokens_used for r in results)
@@ -157,12 +157,12 @@ def demo_batch(client: anthropic.Anthropic) -> None:
     for r in results:
         status = r.text or f"ERROR: {r.error}"
         print(f"  [{r.custom_id}] {status}")
-    print(f"\n  合計トークン: {total_tokens:,} (通常の50%のコスト)")
+    print(f"\n  Total tokens: {total_tokens:,} (50% of standard cost)")
 
 
 def demo_token_counting(client: anthropic.Anthropic) -> None:
     print(f"\n{SEPARATOR}")
-    print("5. 事前トークンカウント（コスト予測）")
+    print("5. Pre-flight Token Counting (cost estimation)")
     print(SEPARATOR)
 
     counter = TokenCounter(client, model="claude-sonnet-4-6")
@@ -170,16 +170,16 @@ def demo_token_counting(client: anthropic.Anthropic) -> None:
 
     scenarios = [
         {
-            "name": "短い質問",
-            "messages": [{"role": "user", "content": "こんにちは！"}],
+            "name": "Short question",
+            "messages": [{"role": "user", "content": "Hello!"}],
             "expected_output": 50,
         },
         {
-            "name": "長文要約依頼",
+            "name": "Long summarization request",
             "messages": [
                 {
                     "role": "user",
-                    "content": "以下の文章を要約してください：\n" + "Pythonは汎用プログラミング言語です。" * 50,
+                    "content": "Please summarize the following:\n" + "Python is a general-purpose programming language. " * 50,
                 }
             ],
             "expected_output": 200,
@@ -190,26 +190,26 @@ def demo_token_counting(client: anthropic.Anthropic) -> None:
         input_tokens = counter.count(s["messages"])
         est_cost = estimator.estimate(input_tokens, s["expected_output"])
         print(f"  [{s['name']}]")
-        print(f"    入力トークン: {input_tokens:,}")
-        print(f"    推定コスト:   ${est_cost:.6f} USD")
+        print(f"    Input tokens:    {input_tokens:,}")
+        print(f"    Estimated cost:  ${est_cost:.6f} USD")
         print()
 
 
 def demo_optimized_client() -> None:
     print(f"\n{SEPARATOR}")
-    print("6. OptimizedClient（全手法の統合）")
+    print("6. OptimizedClient (all techniques combined)")
     print(SEPARATOR)
 
     oc = OptimizedClient(
-        stable_system="あなたは丁寧な日本語アシスタントです。",
+        stable_system="You are a polite and helpful assistant.",
         cache_ttl="5m",
         auto_route=True,
         default_max_tokens=256,
     )
 
     queries = [
-        ("分類して: 映画が面白かった", TaskComplexity.SIMPLE),
-        ("Pythonのジェネレータを説明してください", None),
+        ("Classify: The movie was enjoyable", TaskComplexity.SIMPLE),
+        ("Explain Python generators", None),
     ]
 
     for q, force in queries:
@@ -218,20 +218,20 @@ def demo_optimized_client() -> None:
         print(f"  A: {reply[:100]}…" if len(reply) > 100 else f"  A: {reply}")
         print()
 
-    print(f"  キャッシュ: {oc.cache_stats}")
-    print(f"  コスト:     {oc.cost_summary}")
+    print(f"  Cache:  {oc.cache_stats}")
+    print(f"  Cost:   {oc.cost_summary}")
 
 
 def main() -> None:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        print("ERROR: ANTHROPIC_API_KEY 環境変数が設定されていません")
+        print("ERROR: ANTHROPIC_API_KEY environment variable is not set")
         print("  export ANTHROPIC_API_KEY=sk-ant-...")
         return
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    print("\n🚀 Habitly — Claude トークン最適化デモ")
+    print("\n🚀 Lynq — Claude Token Optimization Demo")
     print("=" * 60)
 
     demo_routing()
@@ -240,11 +240,11 @@ def main() -> None:
     demo_compression(client)
     demo_optimized_client()
 
-    # バッチはAPIコールが多いため最後（コメントアウトで任意実行）
+    # Batch demo is last (makes multiple API calls — uncomment to run)
     # demo_batch(client)
 
     print(f"\n{SEPARATOR}")
-    print("完了！")
+    print("Done!")
 
 
 if __name__ == "__main__":
