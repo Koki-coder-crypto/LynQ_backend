@@ -1,0 +1,102 @@
+name: Weekly Growth Report
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"   # Every Monday 9:00 UTC
+  workflow_dispatch:        # Manual trigger
+
+jobs:
+  growth-report:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch PyPI download stats
+        id: pypi
+        run: |
+          PKG="token-optimizer"
+          STATS=$(curl -s "https://pypistats.org/api/packages/${PKG}/recent" 2>/dev/null || echo '{}')
+          echo "stats=$STATS" >> $GITHUB_OUTPUT
+
+      - name: Fetch GitHub stats
+        id: github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO="${{ github.repository }}"
+          STARS=$(gh api repos/$REPO --jq '.stargazers_count')
+          FORKS=$(gh api repos/$REPO --jq '.forks_count')
+          OPEN_ISSUES=$(gh api repos/$REPO --jq '.open_issues_count')
+          echo "stars=$STARS" >> $GITHUB_OUTPUT
+          echo "forks=$FORKS" >> $GITHUB_OUTPUT
+          echo "open_issues=$OPEN_ISSUES" >> $GITHUB_OUTPUT
+
+      - name: Fetch open issues for triage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue list --state open --json title,labels,createdAt --limit 20 > issues.json
+          cat issues.json
+
+      - name: Generate report with Claude AI
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          pip install anthropic
+          python - <<'EOF'
+          import anthropic, json, os
+          from datetime import date
+
+          pypi_stats = '${{ steps.pypi.outputs.stats }}'
+          stars      = '${{ steps.github.outputs.stars }}'
+          forks      = '${{ steps.github.outputs.forks }}'
+          open_issues = '${{ steps.github.outputs.open_issues }}'
+
+          try:
+              issues = json.load(open("issues.json"))
+          except Exception:
+              issues = []
+
+          prompt = f"""
+          Weekly growth report for Habitly (token-optimizer) — {date.today()}
+
+          GitHub: {stars} stars, {forks} forks, {open_issues} open issues
+          PyPI stats: {pypi_stats}
+          Open issues (top 20): {json.dumps(issues, ensure_ascii=False, indent=2)}
+
+          Please provide:
+          1. Key metrics summary (2-3 sentences)
+          2. Top 3 issues to prioritize this week with rationale
+          3. One concrete growth action to take
+          4. Any anomalies or concerns
+
+          Be concise and actionable.
+          """
+
+          client = anthropic.Anthropic()
+          msg = client.messages.create(
+              model="claude-haiku-4-5",
+              max_tokens=1024,
+              messages=[{"role": "user", "content": prompt}],
+          )
+          report = msg.content[0].text
+          print(report)
+
+          with open("growth_report.md", "w") as f:
+              f.write(f"# Weekly Growth Report — {date.today()}\n\n")
+              f.write(report)
+          EOF
+
+      - name: Post report as GitHub Issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPORT=$(cat growth_report.md)
+          gh issue create \
+            --title "📊 Weekly Growth Report — $(date +%Y-%m-%d)" \
+            --body "$REPORT" \
+            --label "growth-report" || true
