@@ -1,0 +1,129 @@
+{
+  "products": [
+    {
+      "product_id": "com.lynq.app.pro.monthly",
+      "reference_name": "LynQ Pro - Monthly",
+      "type": "Auto-Renewable Subscription",
+      "subscription_group": "LynQ Pro",
+      "duration": "1 Month",
+      "price_usd": 4.99,
+      "price_jpy": 750,
+      "display_name_en": "LynQ Pro Monthly",
+      "display_name_ja": "LynQ Pro 月額プラン",
+      "description_en": "Unlimited AI scans, advanced QR customization, 1-year history, iCloud sync. Billed monthly.",
+      "description_ja": "無制限AIスキャン・高度なQRカスタマイズ・1年間履歴・iCloud同期。毎月自動更新。",
+      "free_trial_days": 7,
+      "features": [
+        "Unlimited AI-powered scans",
+        "Priority phishing analysis",
+        "Advanced QR customization with logo embed",
+        "1-year scan history",
+        "iCloud sync across devices",
+        "CSV export",
+        "No ads"
+      ]
+    },
+    {
+      "product_id": "com.lynq.app.pro.annual",
+      "reference_name": "LynQ Pro - Annual",
+      "type": "Auto-Renewable Subscription",
+      "subscription_group": "LynQ Pro",
+      "duration": "1 Year",
+      "price_usd": 34.99,
+      "price_jpy": 5300,
+      "display_name_en": "LynQ Pro Annual",
+      "display_name_ja": "LynQ Pro 年間プラン",
+      "description_en": "Everything in Pro Monthly — billed once per year. Save 42% vs monthly.",
+      "description_ja": "Pro月額プランの全機能。年一括払いで月額より約41%お得。",
+      "free_trial_days": 7,
+      "savings_vs_monthly_pct": 42,
+      "features": [
+        "Unlimited AI-powered scans",
+        "Priority phishing analysis",
+        "Advanced QR customization with logo embed",
+        "1-year scan history",
+        "iCloud sync across devices",
+        "CSV export",
+        "No ads",
+        "Best value"
+      ]
+    },
+    {
+      "product_id": "com.lynq.app.lifetime",
+      "reference_name": "LynQ Lifetime Pro",
+      "type": "Non-Consumable",
+      "price_usd": 49.99,
+      "price_jpy": 7500,
+      "display_name_en": "LynQ Lifetime",
+      "display_name_ja": "LynQ 生涯ライセンス",
+      "description_en": "Pay once, use forever. All Pro features for life — no recurring charge.",
+      "description_ja": "一回払いで永久利用。Pro全機能が生涯使い放題。追加料金なし。",
+      "note": "One-time purchase. Limited availability. Price may increase.",
+      "features": [
+        "All current and future Pro features",
+        "Unlimited AI-powered scans",
+        "Lifetime scan history",
+        "iCloud sync",
+        "CSV export",
+        "No ads",
+        "No recurring charge"
+      ]
+    },
+    {
+      "product_id": "com.lynq.app.business.monthly",
+      "reference_name": "LynQ Business - Monthly",
+      "type": "Auto-Renewable Subscription",
+      "subscription_group": "LynQ Business",
+      "duration": "1 Month",
+      "price_usd": 14.99,
+      "price_jpy": 2250,
+      "display_name_en": "LynQ Business Monthly",
+      "display_name_ja": "LynQ Business 月額プラン",
+      "description_en": "For teams: everything in Pro plus team management (5 seats), custom branding, analytics, and API access.",
+      "description_ja": "チーム向け：Proの全機能＋チーム管理（5名）・カスタムブランド・分析・API連携。",
+      "free_trial_days": 14,
+      "features": [
+        "Everything in LynQ Pro",
+        "Team management up to 5 members",
+        "Shared scan history & alerts",
+        "Custom branded QR codes",
+        "Analytics dashboard",
+        "API access (100 req/day)",
+        "Priority support"
+      ]
+    },
+    {
+      "product_id": "com.lynq.app.business.annual",
+      "reference_name": "LynQ Business - Annual",
+      "type": "Auto-Renewable Subscription",
+      "subscription_group": "LynQ Business",
+      "duration": "1 Year",
+      "price_usd": 99.99,
+      "price_jpy": 14800,
+      "display_name_en": "LynQ Business Annual",
+      "display_name_ja": "LynQ Business 年間プラン",
+      "description_en": "All Business features, billed annually. Save 44% vs monthly.",
+      "description_ja": "Business全機能。年一括払いで月額より約45%お得。",
+      "free_trial_days": 14,
+      "savings_vs_monthly_pct": 44
+    }
+  ],
+  "subscription_groups": [
+    {
+      "name": "LynQ Pro",
+      "reference_name": "LynQ Pro Subscriptions",
+      "products": [
+        "com.lynq.app.pro.monthly",
+        "com.lynq.app.pro.annual"
+      ]
+    },
+    {
+      "name": "LynQ Business",
+      "reference_name": "LynQ Business Subscriptions",
+      "products": [
+        "com.lynq.app.business.monthly",
+        "com.lynq.app.business.annual"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>LynQ</string>
+    <key>CFBundleDisplayName</key>
+    <string>LynQ</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.lynq.app</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Privacy Usage Descriptions (required by Apple) -->
+    <key>NSCameraUsageDescription</key>
+    <string>LynQ uses your camera to scan QR codes and check them for safety with AI.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>LynQ accesses your photos so you can scan QR codes saved as images.</string>
+
+    <!-- Anthropic API Key — store in xcconfig / keychain in production -->
+    <key>ANTHROPIC_API_KEY</key>
+    <string>$(ANTHROPIC_API_KEY)</string>
+
+    <!-- App Transport Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>api.anthropic.com</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSIncludesSubdomains</key>
+                <false/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- Minimum OS -->
+    <key>MinimumOSVersion</key>
+    <string>17.0</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>safari</string>
+        <string>tel</string>
+        <string>mailto</string>
+    </array>
+</dict>
+</plist>

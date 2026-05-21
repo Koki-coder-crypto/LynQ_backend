@@ -1,0 +1,83 @@
+{
+  "app_info": {
+    "name": "LynQ - AI QR Scanner & Safety",
+    "subtitle": "Scan Safe. Know More. Go Fast.",
+    "bundle_id": "com.lynq.app",
+    "sku": "LYNQ001",
+    "primary_language": "en-US",
+    "primary_category": "Utilities",
+    "secondary_category": "Productivity",
+    "content_rights": {
+      "third_party_content": false,
+      "description": ""
+    },
+    "age_rating": {
+      "rating": "4+",
+      "unrestricted_web_access": false,
+      "gambling": false,
+      "contests": false,
+      "mature_or_suggestive_themes": "NONE",
+      "horror_fear_themes": "NONE",
+      "medical_treatment_info": "NONE",
+      "alcohol_tobacco_or_drug_use": "NONE",
+      "simulated_gambling": "NONE",
+      "sexual_content_or_nudity": "NONE",
+      "graphic_violence": "NONE",
+      "realistic_violence": "NONE",
+      "cartoon_fantasy_violence": "NONE"
+    }
+  },
+  "version_info": {
+    "version": "1.0.0",
+    "build": "1",
+    "copyright": "2026 Koki. All rights reserved."
+  },
+  "app_store_info": {
+    "promotional_text": "Now with real-time AI phishing detection — scan any QR code safely. 🛡️",
+    "support_url": "https://github.com/Koki-coder-crypto/LynQ_backend/issues",
+    "marketing_url": "https://github.com/Koki-coder-crypto/LynQ_backend",
+    "privacy_policy_url": "https://github.com/Koki-coder-crypto/LynQ_backend/blob/master/app_store/privacy_policy.html"
+  },
+  "review_info": {
+    "first_name": "Koki",
+    "last_name": "Developer",
+    "phone_number": "",
+    "email": "kouki_1203@icloud.com",
+    "demo_account_required": false,
+    "notes": "app_store/review_notes.txt"
+  },
+  "localizations": {
+    "en-US": {
+      "name": "LynQ - AI QR Scanner & Safety",
+      "subtitle": "Scan Safe. Know More. Go Fast.",
+      "keywords": "qr scanner,qr reader,barcode scan,ai qr,safe scan,qr generator,phishing,qr code",
+      "description_file": "description_en.txt",
+      "whats_new_file": "whats_new_en.txt"
+    },
+    "ja": {
+      "name": "LynQ - AIでQRコードを安全に",
+      "subtitle": "スキャン前にAIが守る。",
+      "keywords": "QRコード,QRスキャナー,QR読み取り,バーコード,QR作成,安全確認,フィッシング対策,QRリーダー",
+      "description_file": "description_ja.txt",
+      "whats_new_file": "whats_new_ja.txt"
+    }
+  },
+  "devices": {
+    "iphone": true,
+    "ipad": true,
+    "mac_catalyst": false,
+    "apple_watch": false,
+    "apple_tv": false
+  },
+  "capabilities": [
+    "Camera",
+    "In-App Purchase",
+    "Push Notifications"
+  ],
+  "entitlements": {
+    "in_app_purchases": true,
+    "push_notifications": true,
+    "app_groups": false,
+    "icloud": true
+  }
+}

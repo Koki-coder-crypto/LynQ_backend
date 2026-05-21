@@ -1,0 +1,4 @@
+app_identifier("com.lynq.app")
+apple_id("kouki_1203@icloud.com")
+itc_team_id(ENV["ITC_TEAM_ID"])
+team_id(ENV["DEVELOPMENT_TEAM"])

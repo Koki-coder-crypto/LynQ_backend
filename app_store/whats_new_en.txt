@@ -1,0 +1,8 @@
+Welcome to LynQ 1.0!
+
+• AI-powered safety check on every QR scan
+• Real-time phishing & quishing detection
+• Instant plain-language explanation of QR content
+• QR code generator with customization
+• 7-day scan history on free, 1-year on Pro
+• iCloud sync for Pro users

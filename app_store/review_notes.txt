@@ -1,0 +1,66 @@
+App Review Notes — LynQ 1.0.0
+==============================
+
+OVERVIEW
+--------
+LynQ is an AI-powered QR code scanner and generator for iPhone and iPad. Its primary purpose is to help users safely scan QR codes by using Claude AI (Anthropic) to analyze the destination URL and flag potential phishing threats (quishing) before the user visits.
+
+CORE FEATURES
+-------------
+1. QR Code Scanning (Camera + Photo Library)
+2. AI Safety Analysis (powered by Anthropic Claude API)
+3. QR Code Generation (URL, contact, WiFi, text)
+4. Scan History with safety status
+5. In-App Purchase: Pro and Business subscriptions + Lifetime one-time purchase
+
+AI / EXTERNAL SERVICE
+---------------------
+LynQ uses the Anthropic Claude API for:
+- Categorizing QR code content
+- Generating a plain-language safety explanation
+- Translating non-English QR content
+
+URL safety checks are performed using anonymized URL hashes. No personally identifiable information is sent to external services. Users are informed of AI usage within the app.
+
+IN-APP PURCHASES
+----------------
+Five IAP products are configured:
+- com.lynq.app.pro.monthly     ($4.99/month, 7-day trial)
+- com.lynq.app.pro.annual      ($34.99/year, 7-day trial)
+- com.lynq.app.lifetime        ($49.99 non-consumable)
+- com.lynq.app.business.monthly ($14.99/month, 14-day trial)
+- com.lynq.app.business.annual  ($99.99/year, 14-day trial)
+
+Free users get 20 AI scans/day and 5 QR generations/month with no subscription required.
+
+TEST ACCOUNT (for review)
+--------------------------
+No account is required to use LynQ. All features are accessible without login.
+For testing IAP, use the standard Sandbox tester flow.
+
+CAMERA USAGE
+------------
+NSCameraUsageDescription: "LynQ uses your camera to scan QR codes."
+NSPhotoLibraryUsageDescription: "LynQ accesses your photos to scan QR codes saved as images."
+
+NETWORK USAGE
+-------------
+The app requires an internet connection for AI analysis. If offline, the app falls back to basic URL parsing and displays a "Offline — basic scan only" indicator.
+
+SUBSCRIPTION DISCLOSURE
+-----------------------
+Subscription terms are shown on the paywall screen and in the App Store listing. The cancellation instructions direct users to Apple ID Account Settings, in compliance with App Store guidelines section 3.1.2.
+
+PRIVACY POLICY
+--------------
+Full Privacy Policy: https://github.com/Koki-coder-crypto/LynQ_backend/blob/master/app_store/privacy_policy.html
+
+KNOWN LIMITATIONS IN v1.0
+--------------------------
+- Business team features (team management, shared history) are functional for single users; multi-seat team management UI will be expanded in v1.1.
+- Batch QR generation is available via the Business plan but limited to 10 codes per session in v1.0.
+
+CONTACT
+-------
+Developer: Koki
+Email: kouki_1203@icloud.com

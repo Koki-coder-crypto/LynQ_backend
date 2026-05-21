@@ -1,0 +1,83 @@
+Before you tap, LynQ knows if it's safe.
+
+LynQ is the first QR code scanner powered by Claude AI — the same intelligence trusted by Fortune 500 companies. Scan any QR code and instantly get a safety verdict, a plain-English explanation of where it leads, and the confidence to act. No more guessing what's behind a QR code.
+
+QR-based phishing (quishing) grew 12x in 2025. Don't scan blind.
+
+─────────────────────────
+🛡️  AI SAFETY — SCAN PROTECTED
+─────────────────────────
+• Real-time phishing & quishing detection on every scan
+• Risk score (Safe / Caution / Danger) with plain-language explanation
+• URL reputation check against live threat databases
+• Safe Preview: see the full destination URL before you visit
+• Detects shortened URLs, redirect chains, and obfuscated links
+
+─────────────────────────
+🧠  AI INTELLIGENCE — KNOW MORE
+─────────────────────────
+• "What does this QR do?" — AI explains in one sentence
+• Instant translation of QR content in 50+ languages
+• Smart categorization: Payment, Social, Business, WiFi, Event, and more
+• Extracts contacts, calendar events, and WiFi credentials automatically
+• Business context: LynQ identifies who runs the domain behind a QR
+
+─────────────────────────
+⚡  QR GENERATION — GO FAST
+─────────────────────────
+• Create QR codes for URLs, contact cards, WiFi, plain text, and more
+• Customizable colors, logo overlay, and corner styles
+• High-resolution PNG & SVG export for print and digital
+• Batch generation for business use (Pro)
+
+─────────────────────────
+📊  HISTORY & ORGANIZATION
+─────────────────────────
+• Full scan history with safety status and AI summary
+• Organize by Safety, Category, Date, or Domain
+• iCloud sync across all your Apple devices (Pro)
+• Export history as CSV for records or compliance
+
+─────────────────────────
+💼  LYNQ PRO — UNLIMITED AI
+─────────────────────────
+Upgrade to Pro for the full LynQ experience:
+
+✓ Unlimited AI-powered scans per day
+✓ Priority threat analysis (deeper AI inspection)
+✓ Advanced QR customization with logo embedding
+✓ 1-year scan history (vs. 7 days on free)
+✓ iCloud sync across iPhone, iPad, and Mac
+✓ CSV export for compliance and record-keeping
+✓ No ads, ever
+
+Monthly: $4.99 / month
+Annual: $34.99 / year (save 42%)
+Lifetime: $49.99 one-time (limited availability)
+
+LynQ Business ($14.99/month) adds team sharing, custom branding, analytics, and API access.
+
+─────────────────────────
+FREE TIER — ALWAYS AVAILABLE
+─────────────────────────
+• 20 AI-powered scans per day
+• 5 QR code generations per month
+• 7-day scan history
+• Basic safety check on every scan
+
+─────────────────────────
+PRIVACY — YOUR SCANS STAY YOURS
+─────────────────────────
+LynQ processes QR content on-device first. URL safety checks use anonymized hashes — we never log the full URLs you scan. No account required to start scanning. See our full Privacy Policy for details.
+
+─────────────────────────
+PERMISSIONS
+─────────────────────────
+Camera — required for QR code scanning
+Photo Library — optional, to scan QR codes from photos
+
+─────────────────────────
+
+LynQ is built for anyone who cares about digital safety — from curious individuals to security-conscious teams. Download free and scan with confidence.
+
+Subscription auto-renews unless cancelled at least 24 hours before the end of the current period. Manage or cancel subscriptions in your Apple ID Account Settings.
