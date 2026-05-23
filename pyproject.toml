@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lynq-backend"
-version = "1.1.0"
+version = "1.2.0"
 description = "Lynq QR app — Claude API token optimization and multi-agent backend"
 authors = [{ name = "Koki", email = "kouki_1203@icloud.com" }]
 license = { text = "MIT" }
