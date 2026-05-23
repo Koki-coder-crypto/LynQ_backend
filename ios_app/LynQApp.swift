@@ -11,7 +11,7 @@ struct LynQApp: App {
             ContentView()
                 .environmentObject(store)
                 .environmentObject(history)
-                .preferredColorScheme(.none)
+                .preferredColorScheme(.dark)
         }
     }
 }
